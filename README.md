@@ -1,3 +1,3 @@
 # README
 
-A sharp review of Recommender Systems Chapter of d2l.😫😫😫
+My implementation version of Recommender Systems Chapter in d2l.😫😫😫
