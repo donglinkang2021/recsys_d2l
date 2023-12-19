@@ -45,6 +45,14 @@ class NeuMF(nn.Module):
         self.U = nn.Embedding(num_users, embedding_dims)
         self.V = nn.Embedding(num_items, embedding_dims)
         self.mlp = nn.Sequential()
+        self.mlp.add_module(
+            'concat_layer', 
+            nn.Linear(
+                embedding_dims * 2, 
+                nums_hiddens[0]
+            )
+        )
+        self.mlp.add_module('concat_act', nn.ReLU())
         for i in range(len(nums_hiddens) - 1):
             self.mlp.add_module(
                 f'linear{i}', 
