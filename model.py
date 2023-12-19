@@ -36,3 +36,55 @@ class RMSELoss(nn.Module):
     def forward(self,yhat,y):
         loss = torch.sqrt(self.mse(yhat,y) + self.eps)
         return loss
+
+class NeuMF(nn.Module):
+    def __init__(self, embedding_dims, num_users, num_items, nums_hiddens, **kwargs):
+        super().__init__()
+        self.P = nn.Embedding(num_users, embedding_dims)
+        self.Q = nn.Embedding(num_items, embedding_dims)
+        self.U = nn.Embedding(num_users, embedding_dims)
+        self.V = nn.Embedding(num_items, embedding_dims)
+        self.mlp = nn.Sequential()
+        for i in range(len(nums_hiddens) - 1):
+            self.mlp.add_module(
+                f'linear{i}', 
+                nn.Linear(
+                    nums_hiddens[i], 
+                    nums_hiddens[i+1]
+                )
+            )
+            self.mlp.add_module(f'act{i}', nn.ReLU())
+        self.prediction_layer = nn.Linear(
+            nums_hiddens[-1] + embedding_dims, 1, bias=False
+        )
+
+    def forward(self, user_id, item_id):
+        p_mf = self.P(user_id)
+        q_mf = self.Q(item_id)
+        gmf = p_mf * q_mf
+
+        p_mlp = self.U(user_id)
+        q_mlp = self.V(item_id)
+        mlp = self.mlp(torch.cat([p_mlp, q_mlp], axis=-1))
+        logit = self.prediction_layer(
+            torch.cat([gmf, mlp], axis=-1)
+        )
+        return logit
+
+
+class BPRLoss(nn.Module):
+    def __init__(self):
+        super(BPRLoss, self).__init__()
+
+    def forward(self, pos, neg):
+        loss = -F.logsigmoid(pos - neg)
+        return loss.mean()
+    
+
+class HingeLoss(nn.Module):
+    def __init__(self):
+        super(HingeLoss, self).__init__()
+
+    def forward(self, pos, neg, margin=1.0):
+        loss = F.relu(neg - pos + margin)
+        return loss.mean()
